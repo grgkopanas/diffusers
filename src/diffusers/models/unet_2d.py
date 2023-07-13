@@ -150,6 +150,11 @@ class UNet2DModel(ModelMixin, ConfigMixin):
         else:
             self.class_embedding = None
 
+        # camera position embedding
+        self.cam_proj = Timesteps(block_out_channels[0], flip_sin_to_cos, freq_shift)
+        cam_input_dim = block_out_channels[0]
+        self.cam_embedding = TimestepEmbedding(cam_input_dim, time_embed_dim, out_dim=time_embed_dim)
+
         self.down_blocks = nn.ModuleList([])
         self.mid_block = None
         self.up_blocks = nn.ModuleList([])
@@ -229,6 +234,7 @@ class UNet2DModel(ModelMixin, ConfigMixin):
         self,
         sample: torch.FloatTensor,
         timestep: Union[torch.Tensor, float, int],
+        cameras: Optional[torch.Tensor] = None,
         class_labels: Optional[torch.Tensor] = None,
         return_dict: bool = True,
     ) -> Union[UNet2DOutput, Tuple]:
@@ -280,6 +286,10 @@ class UNet2DModel(ModelMixin, ConfigMixin):
 
             class_emb = self.class_embedding(class_labels).to(dtype=self.dtype)
             emb = emb + class_emb
+        if cameras is not None:
+            cam_encoded = self.time_proj(cameras.flatten()).view(*cameras.shape, -1)
+            emb = emb + self.time_embedding(cam_encoded).sum(dim=1)
+
 
         # 2. pre-process
         skip_sample = sample
