@@ -91,6 +91,7 @@ class UNet2DModel(ModelMixin, ConfigMixin):
         in_channels: int = 3,
         out_channels: int = 3,
         center_input_sample: bool = False,
+        cam_conditioning: bool = False,
         time_embedding_type: str = "positional",
         freq_shift: int = 0,
         flip_sin_to_cos: bool = True,
@@ -113,6 +114,7 @@ class UNet2DModel(ModelMixin, ConfigMixin):
     ):
         super().__init__()
 
+        self.cam_conditioning = cam_conditioning
         self.sample_size = sample_size
         time_embed_dim = block_out_channels[0] * 4
 
@@ -151,9 +153,10 @@ class UNet2DModel(ModelMixin, ConfigMixin):
             self.class_embedding = None
 
         # camera position embedding
-        self.cam_proj = Timesteps(block_out_channels[0], flip_sin_to_cos, freq_shift)
-        cam_input_dim = block_out_channels[0]
-        self.cam_embedding = TimestepEmbedding(cam_input_dim, time_embed_dim, out_dim=time_embed_dim)
+        if self.cam_conditioning:
+            self.cam_proj = Timesteps(block_out_channels[0], flip_sin_to_cos, freq_shift)
+            cam_input_dim = block_out_channels[0]
+            self.cam_embedding = TimestepEmbedding(cam_input_dim, time_embed_dim, out_dim=time_embed_dim)
 
         self.down_blocks = nn.ModuleList([])
         self.mid_block = None
@@ -286,7 +289,7 @@ class UNet2DModel(ModelMixin, ConfigMixin):
 
             class_emb = self.class_embedding(class_labels).to(dtype=self.dtype)
             emb = emb + class_emb
-        if cameras is not None:
+        if self.cam_conditioning:
             cam_encoded = self.time_proj(cameras.flatten()).view(*cameras.shape, -1)
             emb = emb + self.time_embedding(cam_encoded).sum(dim=1)
 
