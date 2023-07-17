@@ -290,8 +290,8 @@ class UNet2DModel(ModelMixin, ConfigMixin):
             class_emb = self.class_embedding(class_labels).to(dtype=self.dtype)
             emb = emb + class_emb
         if self.cam_conditioning:
-            cam_encoded = self.time_proj(cameras.flatten()).view(*cameras.shape, -1)
-            emb = emb + self.time_embedding(cam_encoded).sum(dim=1)
+            cam_encoded = self.cam_proj(cameras.flatten()).view(*cameras.shape, -1)
+            emb = emb + self.cam_embedding(cam_encoded).sum(dim=1)
 
 
         # 2. pre-process
