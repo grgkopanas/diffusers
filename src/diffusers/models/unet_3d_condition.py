@@ -27,10 +27,7 @@ from .embeddings import TimestepEmbedding, Timesteps
 from .modeling_utils import ModelMixin
 from .transformer_temporal import TransformerTemporalModel
 from .unet_3d_blocks import (
-    CrossAttnDownBlock3D,
-    CrossAttnUpBlock3D,
     DownBlock3D,
-    UNetMidBlock3DCrossAttn,
     UpBlock3D,
     get_down_block,
     get_up_block,
