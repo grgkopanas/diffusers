@@ -36,6 +36,10 @@ class UNet2DOutput(BaseOutput):
 
     sample: torch.FloatTensor
 
+def init_weights(m):
+    if isinstance(m, nn.Conv2d):
+        torch.nn.init.kaiming_uniform_(m.weight, a=0, mode="fan_in")
+        m.bias.data.fill_(0.0)
 
 class UNet2DModel(ModelMixin, ConfigMixin):
     r"""
@@ -83,6 +87,7 @@ class UNet2DModel(ModelMixin, ConfigMixin):
             Input dimension of the learnable embedding matrix to be projected to `time_embed_dim` when performing class
             conditioning with `class_embed_type` equal to `None`.
     """
+
 
     @register_to_config
     def __init__(
@@ -232,6 +237,7 @@ class UNet2DModel(ModelMixin, ConfigMixin):
         self.conv_norm_out = nn.GroupNorm(num_channels=block_out_channels[0], num_groups=num_groups_out, eps=norm_eps)
         self.conv_act = nn.SiLU()
         self.conv_out = nn.Conv2d(block_out_channels[0], out_channels, kernel_size=3, padding=1)
+        #self.apply(init_weights)
 
     def forward(
         self,
